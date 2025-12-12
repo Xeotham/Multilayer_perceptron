@@ -2,7 +2,13 @@ from numpy.random import shuffle as np_shuffle, seed
 from numpy import arange, concatenate, mean, ndarray, array
 from pandas import DataFrame
 
-def train_test_split(*array_lst, test_size: int | float | None = None, train_size: int | float | None = None, random_state=None, shuffle:bool = True):
+def train_test_split(
+    *array_lst,
+    test_size: int | float | None = None,
+    train_size: int | float | None = None,
+    random_state = None,
+    shuffle:bool = True
+):
     """
     Function to split the data into train and test sets.
     :param array_lst: Arrays of the same length or same shape[0].
