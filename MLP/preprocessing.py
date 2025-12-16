@@ -1,6 +1,8 @@
+from multiprocessing import Pool
 from numpy.random import shuffle as np_shuffle, seed
-from numpy import arange, concatenate, mean, ndarray, array
+from numpy import arange, concatenate, mean, ndarray, array, unique, zeros
 from pandas import DataFrame
+from MLP import MLP
 
 def train_test_split(
     *array_lst,
@@ -105,9 +107,50 @@ def train_test_split(
     except KeyError as err:
         print(err)
 
+def one_hot_encoder(y: ndarray):
+    unique_values = unique(y).tolist()
+    converted_values = zeros((len(y), len(unique_values)), dtype=int)
+    for i, v in enumerate(y):
+        for j, u in enumerate(unique_values):
+            converted_values[i, j] = u == v
+    return converted_values
+
+def one_hot_decoder(y: ndarray, labels: ndarray):
+    decoded_list = []
+    for i, v_list in enumerate(y):
+        for label, values in zip(labels, v_list):
+            if values == 1:
+                decoded_list.append(label)
+    return array(decoded_list)
+
+def verif(iter_number: int, fold_size: int, X_shuffled, y_shuffled, ml_class) -> float:
+        """
+        Evaluates the model on a single fold.
+
+        Args:
+            iter_number (int): Index of the current fold.
+
+        Returns:
+            float: Accuracy of the model on the validation fold.
+        """
+        val_start = iter_number * fold_size
+        val_end = (iter_number + 1) * fold_size
+        X_val = X_shuffled[val_start:val_end]
+        y_val = y_shuffled[val_start:val_end]
+        X_train = concatenate([X_shuffled[:val_start], X_shuffled[val_end:]])
+        y_train = concatenate([y_shuffled[:val_start], y_shuffled[val_end:]])
+
+        # Train the model and generate predictions
+        ml_class.fit(X_train, y_train)
+        y_pred = ml_class.predict(X_val)
+        y_pred = one_hot_decoder(y_pred, unique(y_train))
+        accuracy = mean(y_pred == y_val)
+        return accuracy
+
 def cross_validation(
     X: ndarray,
     y: ndarray,
+    ml_class: MLP,
     k: int = 5,
     multi_process: bool = False,
 ) -> float:
@@ -130,54 +173,17 @@ def cross_validation(
     X_shuffled = X[indices]
     y_shuffled = y[indices]
     accuracies = []
-    threads = []
 
-    def verif(iter_number: int) -> float:
-        """
-        Evaluates the model on a single fold.
 
-        Args:
-            iter_number (int): Index of the current fold.
 
-        Returns:
-            float: Accuracy of the model on the validation fold.
-        """
-        val_start = iter_number * fold_size
-        val_end = (iter_number + 1) * fold_size
-        X_val = X_shuffled[val_start:val_end]
-        y_val = y_shuffled[val_start:val_end]
-        X_train = concatenate([X_shuffled[:val_start], X_shuffled[val_end:]])
-        y_train = concatenate([y_shuffled[:val_start], y_shuffled[val_end:]])
-
-        # Train the model and generate predictions
-        # weights = logreg_train(y_train, X_train, multi_process=True)  | Change to adapt to Multilayer Perceptron
-        # y_pred = generate_predictions(X_val, weights)                 |
-        # accuracy = mean(y_pred == y_val)                              |
-        # return accuracy
-
-    # @threaded
-    # def thread_verif(iter_number: int, queue: Queue) -> None:
-    #     """
-    #     Threaded wrapper for evaluating the model on a single fold.
-    #
-    #     Args:
-    #         iter_number (int): Index of the current fold.
-    #         queue (Queue): Queue to store the accuracy result.
-    #     """
-    #     queue.put(verif(iter_number))
-
-    # if not multi_process:                             |
-    #     # Use multiprocessing for cross-validation    |
-    #     with Manager() as manager:                    |
-    #         q = manager.Queue()                       |
-    #         for i in range(k):                        |
-    #             threads.append(thread_verif(i, q))    | Use Pool instead of threaded
-    #         for thread in threads:                    |
-    #             thread.join()                         |
-    #             accuracies.append(q.get())            |
-    # else:                                             |
-        # Perform cross-validation sequentially         |
-    for i in range(k):
-        accuracies.append(verif(i))
+    if not multi_process:
+        # Use multiprocessing for cross-validation
+        with Pool(processes=k) as pool:
+            print("Enter in pool")
+            results = [pool.apply_async(verif, (i, fold_size, X_shuffled, y_shuffled, ml_class)) for i in range(k)]
+            accuracies = [i.get() for i in results]
+    else:
+        for i in range(k):
+            accuracies.append(verif(i))
 
     return mean(accuracies)
