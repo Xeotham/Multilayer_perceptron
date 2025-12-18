@@ -107,23 +107,7 @@ def train_test_split(
     except KeyError as err:
         print(err)
 
-def one_hot_encoder(y: ndarray):
-    unique_values = unique(y).tolist()
-    converted_values = zeros((len(y), len(unique_values)), dtype=int)
-    for i, v in enumerate(y):
-        for j, u in enumerate(unique_values):
-            converted_values[i, j] = u == v
-    return converted_values
-
-def one_hot_decoder(y: ndarray, labels: ndarray):
-    decoded_list = []
-    for i, v_list in enumerate(y):
-        for label, values in zip(labels, v_list):
-            if values == 1:
-                decoded_list.append(label)
-    return array(decoded_list)
-
-def verif(iter_number: int, fold_size: int, X_shuffled, y_shuffled, ml_class) -> float:
+def _verif(iter_number: int, fold_size: int, X_shuffled, y_shuffled, ml_class) -> float:
         """
         Evaluates the model on a single fold.
 
@@ -143,7 +127,6 @@ def verif(iter_number: int, fold_size: int, X_shuffled, y_shuffled, ml_class) ->
         # Train the model and generate predictions
         ml_class.fit(X_train, y_train)
         y_pred = ml_class.predict(X_val)
-        y_pred = one_hot_decoder(y_pred, unique(y_train))
         accuracy = mean(y_pred == y_val)
         return accuracy
 
@@ -174,16 +157,14 @@ def cross_validation(
     y_shuffled = y[indices]
     accuracies = []
 
-
-
     if not multi_process:
         # Use multiprocessing for cross-validation
         with Pool(processes=k) as pool:
             print("Enter in pool")
-            results = [pool.apply_async(verif, (i, fold_size, X_shuffled, y_shuffled, ml_class)) for i in range(k)]
+            results = [pool.apply_async(_verif, (i, fold_size, X_shuffled, y_shuffled, ml_class)) for i in range(k)]
             accuracies = [i.get() for i in results]
     else:
         for i in range(k):
-            accuracies.append(verif(i))
+            accuracies.append(_verif(i))
 
     return mean(accuracies)

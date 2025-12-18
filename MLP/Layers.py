@@ -90,3 +90,10 @@ class Layers:
 
     def predict(self, X):
         return self.forward(X)
+
+    def __copy__(self):
+        new_layer = Layers(self.n_curr, self.n_prev)
+        if self.prev_layer:
+            new_layer.prev_layer = self.prev_layer.copy()
+        if self.next_layer:
+            new_layer.next_layer = self.next_layer.copy()

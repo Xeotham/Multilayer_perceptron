@@ -26,8 +26,3 @@ def sigmoid(
 
 def softmax(z: ndarray) -> ndarray:
     return exp(z) / sum(exp(z))
-
-def standardize(
-    x: ndarray,
-):
-    return (x - mean(x)) / std(x)
