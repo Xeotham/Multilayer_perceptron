@@ -1,42 +1,54 @@
 from numpy import ndarray, unique, zeros, array
+from MLP.utils import PipeValues
 
 class LabelBinarizer():
     classes_: ndarray
 
     def __init__(self):
+        self.__name__ = "LabelBinarizer"
         super().__init__()
 
     def fit(self, y: ndarray):
         self.classes_ = unique(y)
         return self
 
-    def _pipe_transform(self, values):
-        X, y = values
-        y = self.transform(y)
-        values[1] = y
-        return y
-
     def transform(self, y: ndarray) -> ndarray:
-        converted_values = zeros((len(y), len(self.classes_)), dtype=int)
-        for i, v in enumerate(y):
+        real_y = y
+
+        if isinstance(y, PipeValues):
+            real_y = y.y
+
+        converted_values = zeros((len(real_y), len(self.classes_)), dtype=int)
+        for i, v in enumerate(real_y):
             for j, u in enumerate(self.classes_):
                 converted_values[i, j] = int(u == v)
+
+        if isinstance(y, PipeValues):
+            y.y = converted_values
         return converted_values
 
-    def inverse_transform(self, y: ndarray) -> ndarray:
+    def inverse_transform(self, y: ndarray | PipeValues) -> ndarray:
+        real_y = y
+        if isinstance(y, PipeValues):
+            real_y = y.y
         decoded_list = []
-        for i, v_list in enumerate(y):
+        for i, v_list in enumerate(real_y):
             for label, values in zip(self.classes_, v_list):
                 if values == 1:
                     decoded_list.append(label)
-        return array(decoded_list)
+        inv_arr = array(decoded_list)
+        if isinstance(y, PipeValues):
+            y.y = inv_arr
+        return inv_arr
 
-    def _pipe_fit_transform(self, values):
-        X, y = values
-        y = self.fit_transform(y)
-        values[1] = y
-        return y
-
-    def fit_transform(self, y: ndarray):
-        self.fit(y)
-        return self.transform(y)
+    def fit_transform(self, y: ndarray | PipeValues, X = None):
+        real_X, real_y = 0, y
+        if isinstance(y, PipeValues):
+            real_X, real_y = y.X, y.y
+        if real_y is None:
+            return real_y
+        self.fit(real_y)
+        transformed_y = self.transform(real_y)
+        if isinstance(y, PipeValues):
+            y.y = transformed_y
+        return transformed_y

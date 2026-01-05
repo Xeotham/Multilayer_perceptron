@@ -1,4 +1,5 @@
 from numpy import array, ndarray, var, mean, sqrt
+from MLP.utils import PipeValues
 
 class StandardScaler:
     scale_: ndarray
@@ -6,32 +7,43 @@ class StandardScaler:
     var_:   ndarray
 
     def __init__(self):
+        self.__name__ = "StandardScaler"
         pass
 
-    def fit(self, X: ndarray, y = None):
+    def fit(self, X: ndarray):
         self.var_ = var(X, axis=0)
         self.mean_ = mean(X, axis=0)
         self.scale_ = sqrt(self.var_)
         return self
 
-    def _pipe_transform(self, values):
-        X, y = values
-        X = self.transform(X)
-        values[0] = X
-        return X
-
     def transform(self, X: ndarray):
-        return (X.copy() - self.mean_) / self.scale_
+        real_X = X
+        if isinstance(X, PipeValues):
+            real_X = X.X
+
+        norm_X = (real_X - self.mean_) / self.scale_
+
+        if isinstance(X, PipeValues):
+            X.X = norm_X
+        return norm_X
 
     def inverse_transform(self, X: ndarray):
-        return (X.copy() * self.scale_) + self.mean_
+        real_X = X
+        if isinstance(X, PipeValues):
+            real_X = X.X
+        unnorm_X = (real_X * self.scale_) + self.mean_
 
-    def _pipe_fit_transform(self, values):
-        X, y = values
-        X = self.fit_transform(X)
-        values[0] = X
-        return X
+        if isinstance(X, PipeValues):
+            X.X = unnorm_X
+        return unnorm_X
 
-    def fit_transform(self, X: ndarray, y = None):
-        self.fit(X, y)
-        return self.transform(X)
+    def fit_transform(self, X: ndarray| PipeValues):
+        real_X = X
+        if isinstance(X, PipeValues):
+            real_X, real_y = X.X, X.y
+        self.fit(real_X)
+
+        transformed_X = self.transform(real_X)
+        if isinstance(X, PipeValues):
+            X.X = transformed_X
+        return transformed_X

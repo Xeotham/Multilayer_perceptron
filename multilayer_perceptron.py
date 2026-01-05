@@ -3,7 +3,7 @@ from pandas import read_csv
 from MLP import MLP, train_test_split, cross_validation
 from MLP.Preprocessing import LabelBinarizer, StandardScaler
 from MLP.FeatureSelection import VarianceThreshold
-from MLP.Pipeline import Pipeline
+from MLP.Pipeline import Pipeline, make_pipeline
 from numpy import unique, mean
 
 
@@ -16,9 +16,11 @@ def main():
     # print(X)
     X_train, X_val, y_train, y_val = train_test_split(X, y)
 
-    pipe = Pipeline([('label_binarizer', LabelBinarizer()), ('scaler', StandardScaler()), ('mlp', MLP())])
+    # pipe = Pipeline([('label_binarizer', LabelBinarizer()), ('scaler', StandardScaler()), ('mlp', MLP())])
+    pipe = make_pipeline(LabelBinarizer(), StandardScaler(), MLP(hidden_layers = (30, 30, 30), epochs=100000))
 
     pipe.fit(X_train, y_train)
+    print(pipe.predict(X_val))
     # var_thre = VarianceThreshold(threshold = 1e-3)
     # print(var_thre.fit_transform(X_train).shape)
 
@@ -56,7 +58,7 @@ def main():
     # tr_y_pred[tr_y_pred_mask] = 0
     # tr_y_pred[~tr_y_pred_mask] = 1
 
-    # print(f"Accuracy: {cross_validation(X, y, multilayer_perceptron)}")
+    print(f"Accuracy: {cross_validation(X, y, pipe)}")
 
 
 

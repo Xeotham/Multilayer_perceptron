@@ -26,3 +26,10 @@ def sigmoid(
 
 def softmax(z: ndarray) -> ndarray:
     return exp(z) / sum(exp(z))
+
+class PipeValues:
+    X = None
+    y = None
+    def __init__(self, X: ndarray, y: ndarray):
+        self.X = X
+        self.y = y
