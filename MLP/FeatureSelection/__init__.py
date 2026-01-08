@@ -1,1 +1,2 @@
 from .VarianceThreshold import VarianceThreshold
+from .MutualInformation import MutualInformation

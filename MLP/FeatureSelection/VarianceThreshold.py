@@ -6,7 +6,8 @@ class VarianceThreshold:
     threshold: float = 0.0
     variance_: ndarray
     n_features_in_: ndarray
-
+    prev_X: ndarray
+    prev_y: ndarray
 
     def __init__(self, threshold: float = 0.0):
         self.__name__ = "VarianceThreshold"
@@ -14,9 +15,14 @@ class VarianceThreshold:
         self.variance_ = zeros((1, 1))
 
     def fit(self, X: ndarray, y: ndarray = None):
-        if not X:
+        real_X = X
+        if isinstance(X, PipeValues):
+            real_X = X.X
+        self.prev_X = real_X
+        if real_X is None or not isinstance(real_X, ndarray):
             raise ValueError("X is not provided")
-        self.variance_ = X.var(axis=0)
+
+        self.variance_ = real_X.var(axis=0)
         return self
 
     def transform(self, X: ndarray):
@@ -24,12 +30,14 @@ class VarianceThreshold:
         if isinstance(X, PipeValues):
             real_X = X.X
 
-        filtered_X = real_X[self.variance_ > self.threshold]
+        filtered_X = real_X[:, self.variance_ > self.threshold]
         if isinstance(X, PipeValues):
             X.X = filtered_X
         return filtered_X
 
     def inverse_transform(self, X: ndarray):
+        # if isinstance(X, PipeValues):
+        #     X.X = self.prev_X
         pass
 
     def fit_transform(self, X: ndarray, y: ndarray = None):

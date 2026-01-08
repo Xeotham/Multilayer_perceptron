@@ -2,7 +2,7 @@ import numpy as np
 from pandas import read_csv
 from MLP import MLP, train_test_split, cross_validation
 from MLP.Preprocessing import LabelBinarizer, StandardScaler
-from MLP.FeatureSelection import VarianceThreshold
+from MLP.FeatureSelection import VarianceThreshold, MutualInformation
 from MLP.Pipeline import Pipeline, make_pipeline
 from numpy import unique, mean
 
@@ -16,11 +16,25 @@ def main():
     # print(X)
     X_train, X_val, y_train, y_val = train_test_split(X, y)
 
-    # pipe = Pipeline([('label_binarizer', LabelBinarizer()), ('scaler', StandardScaler()), ('mlp', MLP())])
-    pipe = make_pipeline(LabelBinarizer(), StandardScaler(), MLP(hidden_layers = (30, 30, 30), epochs=100000))
 
-    pipe.fit(X_train, y_train)
-    print(pipe.predict(X_val))
+
+    # mutinf = MutualInformation()
+
+    # mutinf.fit(X_train, y_train)
+
+
+    # pipe = Pipeline([('label_binarizer', LabelBinarizer()), ('scaler', StandardScaler()), ('mlp', MLP())])
+    # pipe = make_pipeline(LabelBinarizer(), StandardScaler(), VarianceThreshold(), MLP(hidden_layers = (30, 30, 30), epochs=100000))
+    pipe = make_pipeline(
+        LabelBinarizer(),
+        StandardScaler(),
+        VarianceThreshold(),
+        MutualInformation(4),
+        MLP(hidden_layers = (10, 10, 10), epochs=1000)
+    )
+
+    # pipe.fit(X_train, y_train)
+    # print(pipe.predict(X_val))
     # var_thre = VarianceThreshold(threshold = 1e-3)
     # print(var_thre.fit_transform(X_train).shape)
 
