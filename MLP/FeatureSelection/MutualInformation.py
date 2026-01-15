@@ -108,3 +108,18 @@ class MutualInformation:
             X.X = filtered_X
 
         return filtered_X
+
+    def copy(self):
+        new_copy = MutualInformation()
+        new_copy.number_of_features = self.number_of_features
+
+        new_copy.mi_score = self.mi_score.copy()
+        if new_copy.prev_X is not None:
+            new_copy.prev_X = self.prev_X.copy()
+        else:
+            new_copy.prev_X = None
+        if new_copy.prev_y is not None:
+            new_copy.prev_y = self.prev_y.copy()
+        else:
+            new_copy.prev_y = None
+        return new_copy

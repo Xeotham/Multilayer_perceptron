@@ -7,7 +7,6 @@ class StandardScaler:
     var_:   ndarray
 
     def __init__(self):
-        self.__name__ = "StandardScaler"
         pass
 
     def fit(self, X: ndarray):
@@ -47,3 +46,10 @@ class StandardScaler:
         if isinstance(X, PipeValues):
             X.X = transformed_X
         return transformed_X
+
+    def copy(self):
+        new_scaler = StandardScaler()
+        new_scaler.scale_ = self.scale_.copy()
+        new_scaler.mean_ = self.mean_.copy()
+        new_scaler.mean_ = self.mean_.copy()
+        return new_scaler

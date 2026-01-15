@@ -18,8 +18,10 @@ X_val: ndarray = X_val / 255.0
 X_train = X_train.reshape((X_train.shape[0], X_train.shape[1] * X_train.shape[2]))
 X_val = X_val.reshape((X_val.shape[0], X_val.shape[1] * X_val.shape[2]))
 
-mlp = make_pipeline(LabelBinarizer(), MLP(hidden_layers = (128, 64), epochs=50, learning_rate=0.001))
-mlp.fit(X_train, y_train)
-pred = mlp.predict(X_val)
+mlp = MLP(hidden_layers = (128, 64), epochs=1000, learning_rate=0.01)
+pipe = make_pipeline(LabelBinarizer(), mlp)
+pipe.fit(X_train, y_train)
+pred = pipe.predict(X_val)
 acc = sum(pred == y_val) / len(y_val)
 print(f"Accuracy: {acc}")
+mlp.show_plots()

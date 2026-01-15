@@ -1,12 +1,11 @@
 from numpy import ndarray, unique, zeros, array
 from MLP.utils import PipeValues
 
-class LabelBinarizer():
+class LabelBinarizer:
     classes_: ndarray
 
     def __init__(self):
-        self.__name__ = "LabelBinarizer"
-        super().__init__()
+        pass
 
     def fit(self, y: ndarray):
         self.classes_ = unique(y)
@@ -52,3 +51,8 @@ class LabelBinarizer():
         if isinstance(y, PipeValues):
             y.y = transformed_y
         return transformed_y
+
+    def copy(self):
+        new_copy = LabelBinarizer()
+        new_copy.classes_ = self.classes_.copy()
+        return new_copy

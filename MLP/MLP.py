@@ -1,9 +1,11 @@
+from numpy.random import permutation
+
 from .Layers import Layers
 from .preprocessing import train_test_split
 from .utils import softmax
-from numpy import log, ndarray, max, unique, array
+from numpy import log, ndarray, max, unique, array, clip, mean, log, arange, zeros, sum
 from tqdm import tqdm
-from matplotlib.pyplot import plot, show
+from matplotlib.pyplot import plot, show, subplots, legend
 
 class MLP:
     # Setup
@@ -13,6 +15,8 @@ class MLP:
     layers:         list[Layers]
     input_layer:    Layers
     output_layer:   Layers
+
+    batch_size: int
 
     # Datasets for training
     X_train:    ndarray
@@ -24,35 +28,71 @@ class MLP:
 
     # Graphs
     cost_evolution: list
+    val_cost_evolution: list
 
-    def __init__(self, hidden_layers = (10, 10), learning_rate = 1e-3, epochs = 1000):
-        self.__name__ = "MLP"
+    def __init__(self, hidden_layers = (10, 10, 10), learning_rate = 1e-3, epochs = 1000, batch_size = 32):
         self.hidden_layers = hidden_layers
         self.learning_rate = learning_rate
         self.epochs = epochs
+        self.batch_size = batch_size
+
         self.cost_evolution = []
+        self.val_cost_evolution = []
 
-        self.layers = [Layers(hidden_layers[0], 0)]
+        self.layers = []
 
-        for i in range(1, len(hidden_layers)):
-            new_layer = Layers(hidden_layers[i], hidden_layers[i - 1], prev_layer = self.layers[i - 1])
-            self.layers[i - 1].next_layer = new_layer
+        # Create the list of layers
+        for i, layer in enumerate(hidden_layers):
+            if i == 0:
+                prev_layer = None
+                prev_layer_size = 0
+            elif isinstance(hidden_layers[i - 1], Layers):
+                prev_layer = self.layers[i - 1]
+                prev_layer_size = hidden_layers[i - 1].n_prev
+            elif isinstance(hidden_layers[i - 1], int):
+                prev_layer = self.layers[i - 1]
+                prev_layer_size = hidden_layers[i - 1]
+            else:
+                raise TypeError("Invalid type for hidden_layers. Layers must be of type int or Layers")
+
+            if isinstance(layer, Layers):
+                new_layer = layer
+                new_layer.prev_layer = prev_layer
+                new_layer.n_prev = prev_layer_size
+            elif isinstance(layer, int):
+                new_layer = Layers(layer, prev_layer_size, prev_layer = prev_layer, activation="relu", name = f"Hidden Layer {i}")
+            else:
+                raise TypeError("Invalid type for hidden_layers. Layers must be of type int or Layers")
             self.layers.append(new_layer)
+
+        # Clean the setup of each layers
+        for i, layer in enumerate(self.layers):
+            if i < len(self.layers) - 1:
+                layer.next_layer = self.layers[i + 1]
+            else:
+                layer.next_layer = None
+            if layer.name is None:
+                layer.name = f"Hidden Layer {i}"
+            if i == 0:
+                continue
+            layer.n_prev = self.layers[i - 1].n_curr
+            layer.init_weights()
         self.input_layer = self.layers[0]
 
-    # def log_loss(self, y) -> float:
-    #     raw_pred = self.input_layer.predict(self.X_train)
-    #     softmax_pred = softmax(raw_pred).T
-    #     bigger_pred = softmax_pred.T[0, :]
-    #     y_cpy = array(y == unique(self.y_train)[0], dtype=int)
-    #     bigger_pred = array(bigger_pred)
-    #
-    #     error = 1/len(y) * sum(-y_cpy * log(bigger_pred) - (1 - y_cpy) * log(1 - bigger_pred))
-    #     return error
+    def log_loss(self, y_true):
+        epsilon = 1e-15
+        y_pred = clip(self.output_layer.activation, epsilon, 1 - epsilon)
+        if y_true.shape[0] > 1:  # Multi-class
+            return -mean(sum(y_true * log(y_pred), axis=0))
+        return -mean(y_true * log(y_pred) + (1 - y_true) * log(1 - y_pred))
 
     def show_plots(self):
-        print(array(self.cost_evolution).T)
-        plot(array(self.cost_evolution).T)
+        fig, axs = subplots(1, 2)
+        # print(array(self.cost_evolution).T)
+        axs[0].plot(array(self.cost_evolution).T)
+        axs[0].set_title("Cost Function")
+        axs[1].plot(array(self.val_cost_evolution).T)
+        axs[1].set_title("Validation Cost Function")
         show()
 
     def fit(self, X, y):
@@ -62,32 +102,76 @@ class MLP:
         self.input_layer.n_prev = self.X_train.T.shape[0]
         self.input_layer.init_weights()
 
-        # self.ohe_y_train = one_hot_encoder(y_train)
-
         penult_layer = self.layers[-1]
-        self.output_layer = Layers(self.y_train.shape[1], penult_layer.n_curr, prev_layer = penult_layer)
+        if self.y_train.shape[1] > 1:
+            self.output_layer = Layers(self.y_train.shape[1], penult_layer.n_curr, prev_layer = penult_layer, activation="softmax", name = f"Output Layer")
+        else:
+            self.output_layer = Layers(self.y_train.shape[1], penult_layer.n_curr, prev_layer = penult_layer, activation="sigmoid", name = f"Output Layer")
         penult_layer.next_layer = self.output_layer
 
+
         for i in tqdm(range(self.epochs)):
-            self.input_layer.forward(self.X_train.T)
 
-            # cost = self.log_loss(y_train)
-            # self.cost_evolution.append(cost)
+            if i % 10 == 0:
+                self.input_layer.forward(self.X_val.T)
+                val_cost = self.log_loss(self.y_val.T)
 
-            self.output_layer.backward(self.y_train.T)
-            self.input_layer.update(self.learning_rate)
+                self.input_layer.forward(self.X_train.T)
+                train_cost = self.log_loss(self.y_train.T)
+
+                if i > 0 and val_cost > self.val_cost_evolution[-1]:
+                    return self
+                self.val_cost_evolution.append(val_cost)
+                self.cost_evolution.append(train_cost)
+
+
+            shuffled_indices = permutation(self.X_train.shape[0])
+
+            X_shuffle = self.X_train[shuffled_indices]
+            y_shuffle = self.y_train[shuffled_indices]
+            X_train_batch = [X_shuffle[i * self.batch_size:(i + 1) * self.batch_size, :] for i in range(self.X_train.shape[0] // self.batch_size)]
+            y_train_batch = [y_shuffle[i * self.batch_size:(i + 1) * self.batch_size, :] for i in range(self.y_train.shape[0] // self.batch_size)]
+
+            for X_batch, y_batch in zip(X_train_batch, y_train_batch):
+                self.input_layer.forward(X_batch.T)
+                self.output_layer.backward(y_batch.T)
+                self.input_layer.update()
+
         return self
 
     def predict(self, X):
         raw_pred = self.input_layer.predict(X.T)
-        softmax_pred = softmax(raw_pred).T
+        # Get index of highest probability
+        idx = raw_pred.argmax(axis=0)
+        # Create one-hot matrix
+        out = zeros(raw_pred.shape)
+        out[idx, arange(raw_pred.shape[1])] = 1
+        return out.T.astype(int)
 
-        for i, pred in enumerate(softmax_pred):
-            bigger = max(pred)
-            for j, value in enumerate(pred):
-                if value == bigger:
-                    softmax_pred[i, j] = 1
-                else:
-                    softmax_pred[i, j] = 0
-        return softmax_pred.astype(int)
+    def copy(self):
+        mlp_copy = MLP()
+        mlp_copy.hidden_layers = self.hidden_layers
+        mlp_copy.learning_rate = self.learning_rate
+        mlp_copy.epochs = self.epochs
 
+        mlp_copy.input_layer = self.input_layer.copy()
+
+        mlp_copy.layers = []
+        curr_layer = self.input_layer
+        while curr_layer is not None:
+            curr_layer = curr_layer.next_layer
+            if curr_layer is not None:
+                mlp_copy.layers.append(curr_layer)
+
+        mlp_copy.output_layer = mlp_copy.layers[-1]
+
+        mlp_copy.batch_size = self.batch_size
+
+        mlp_copy.X_train = self.X_train.copy()
+        mlp_copy.y_train = self.y_train.copy()
+        mlp_copy.X_val = self.X_val.copy()
+        mlp_copy.y_val = self.y_val.copy()
+
+        mlp_copy.cost_evolution = self.cost_evolution.copy()
+        mlp_copy.val_cost_evolution = self.val_cost_evolution.copy()
+        return mlp_copy

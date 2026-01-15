@@ -5,7 +5,6 @@ from MLP.utils import PipeValues
 class VarianceThreshold:
     threshold: float = 0.0
     variance_: ndarray
-    n_features_in_: ndarray
     prev_X: ndarray
     prev_y: ndarray
 
@@ -53,3 +52,8 @@ class VarianceThreshold:
             X.y = real_y
 
         return new_X
+
+    def copy(self):
+        new_var = VarianceThreshold(self.threshold)
+        new_var.variance_ = self.variance_.copy()
+        return new_var

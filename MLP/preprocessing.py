@@ -124,9 +124,11 @@ def _verif(iter_number: int, fold_size: int, X_shuffled, y_shuffled, ml_class) -
         X_train = concatenate([X_shuffled[:val_start], X_shuffled[val_end:]])
         y_train = concatenate([y_shuffled[:val_start], y_shuffled[val_end:]])
 
+        class_copy = ml_class.copy()
+
         # Train the model and generate predictions
-        ml_class.fit(X_train, y_train)
-        y_pred = ml_class.predict(X_val)
+        class_copy.fit(X_train, y_train)
+        y_pred = class_copy.predict(X_val)
         accuracy = mean(y_pred == y_val)
         return accuracy
 

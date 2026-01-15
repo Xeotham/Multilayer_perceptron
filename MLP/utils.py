@@ -1,4 +1,4 @@
-from numpy import exp, ndarray, empty_like, std, mean
+from numpy import exp, ndarray, empty_like, std, mean, array, max, sum
 
 
 def sigmoid(
@@ -24,8 +24,25 @@ def sigmoid(
 
     return out
 
+sigmoid.derivative = lambda z: z * (1 - z)
+
+def relu(
+    z: ndarray
+) -> ndarray:
+    out = z.copy()
+    pos_mask = (z <= 0)
+    out[pos_mask] = 0
+    return out
+
+relu.derivative = lambda z: (z > 0).astype(float)
+
 def softmax(z: ndarray) -> ndarray:
-    return exp(z) / sum(exp(z))
+    # Subtract max for numerical stability (prevents exp overflow)
+    shift_z = z - max(z, axis=0, keepdims=True)
+    exps = exp(shift_z)
+    return exps / sum(exps, axis=0, keepdims=True)
+
+softmax.derivative = lambda z: z * (1 - z)
 
 class PipeValues:
     X = None
@@ -33,3 +50,6 @@ class PipeValues:
     def __init__(self, X: ndarray, y: ndarray):
         self.X = X
         self.y = y
+
+    def copy(self):
+        return PipeValues(self.X, self.y)
