@@ -41,6 +41,8 @@ class Layers:
     activation_function: Callable = None
     optimizer = None
 
+    save_state = None
+
     def dZf(self, y: ndarray) -> ndarray:
         # print(f"dZf y: {y}")
         # print(f"dZf act: {self.activation}")
@@ -73,6 +75,15 @@ class Layers:
 
         self.activation_function = activation_dict[activation]
         self.optimizer = optimizer_dict[optimizer](learning_rate = learning_rate)
+
+        self.X = None
+        self.Z = None
+        self.activation = None
+        self.dZ = None
+        self.dWeight = None
+        self.dBias = None
+        self.dZ_calculator = None
+        self.save_state = None
 
         self.init_weights()
 
@@ -121,21 +132,37 @@ class Layers:
         new_layer = Layers(self.n_curr, self.n_prev)
 
         new_layer.name = self.name
-        new_layer.Weight = self.Weight.copy()
-        new_layer.bias = self.bias.copy()
-        if not self.prev_layer:
-            new_layer.X = self.X.copy()
-        new_layer.Z = self.Z.copy()
-        new_layer.activation = self.activation
-        new_layer.dZ = self.dZ.copy()
-        new_layer.dWeight = self.dWeight.copy()
-        new_layer.dBias = self.dBias.copy()
-        new_layer.dZ_calculator = self.dZ_calculator
+        new_layer.Weight = None if self.Weight is None else self.Weight.copy()
+        new_layer.bias = None if self.bias is None else self.bias.copy()
+        new_layer.X = None if self.X is None else self.X.copy()
+        new_layer.Z = None if self.Z is None else self.Z.copy()
+        new_layer.activation = None if self.activation is None else self.activation
+        new_layer.dZ = None if self.dZ is None else self.dZ.copy()
+        new_layer.dWeight = None if self.dWeight is None else self.dWeight.copy()
+        new_layer.dBias = None if self.dBias is None else self.dBias.copy()
+        new_layer.dZ_calculator = None
         new_layer.activation_function = self.activation_function
-        new_layer.optimizer = self.optimizer
+        new_layer.optimizer = self.optimizer.copy()
 
         if self.next_layer:
-            print(new_layer.name)
             new_layer.next_layer = self.next_layer.copy()
             new_layer.next_layer.prev_layer = new_layer
         return new_layer
+
+    def save(self):
+        self.save_state = self.copy()
+        if self.next_layer is not None:
+            self.next_layer.save()
+
+    def load(self):
+        self.Weight = self.save_state.Weight
+        self.bias = self.save_state.bias
+        self.X = self.save_state.X
+        self.Z = self.save_state.Z
+        self.activation = self.save_state.activation
+        self.dZ = self.save_state.dZ
+        self.dWeight = self.save_state.dWeight
+        self.dBias = self.save_state.dBias
+
+        if self.next_layer is not None:
+            self.next_layer.load()

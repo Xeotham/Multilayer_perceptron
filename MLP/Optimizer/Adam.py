@@ -52,8 +52,8 @@ class Adam:
         new_copy.epsilon = self.epsilon
         new_copy.t = self.t
 
-        new_copy.mW = self.mW.copy()
-        new_copy.mb = self.mb.copy()
-        new_copy.vW = self.vW.copy()
-        new_copy.vb = self.vb.copy()
+        new_copy.mW = None if self.mW is None else self.mW.copy()
+        new_copy.mb = None if self.mb is None else self.mb.copy()
+        new_copy.vW = None if self.vW is None else self.vW.copy()
+        new_copy.vb = None if self.vb is None else self.vb.copy()
         return new_copy

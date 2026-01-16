@@ -17,10 +17,7 @@ class LabelBinarizer:
         if isinstance(y, PipeValues):
             real_y = y.y
 
-        converted_values = zeros((len(real_y), len(self.classes_)), dtype=int)
-        for i, v in enumerate(real_y):
-            for j, u in enumerate(self.classes_):
-                converted_values[i, j] = int(u == v)
+        converted_values = (real_y[:, None] == self.classes_).astype(int)
 
         if isinstance(y, PipeValues):
             y.y = converted_values

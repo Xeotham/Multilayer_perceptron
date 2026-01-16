@@ -30,12 +30,12 @@ class MLP:
     cost_evolution: list
     val_cost_evolution: list
 
-    def __init__(self, hidden_layers = (10, 10, 10), learning_rate = 1e-3, epochs = 1000, batch_size = 32):
+    def __init__(self, hidden_layers = (10, 10, 10), learning_rate = 1e-3, epochs = 1000, batch_size = 32, patience = 50):
         self.hidden_layers = hidden_layers
         self.learning_rate = learning_rate
         self.epochs = epochs
         self.batch_size = batch_size
-
+        self.patience = patience
         self.cost_evolution = []
         self.val_cost_evolution = []
 
@@ -78,6 +78,7 @@ class MLP:
             layer.n_prev = self.layers[i - 1].n_curr
             layer.init_weights()
         self.input_layer = self.layers[0]
+        self.output_layer = self.layers[-1]
 
     def log_loss(self, y_true):
         epsilon = 1e-15
@@ -102,27 +103,36 @@ class MLP:
         self.input_layer.n_prev = self.X_train.T.shape[0]
         self.input_layer.init_weights()
 
-        penult_layer = self.layers[-1]
-        if self.y_train.shape[1] > 1:
-            self.output_layer = Layers(self.y_train.shape[1], penult_layer.n_curr, prev_layer = penult_layer, activation="softmax", name = f"Output Layer")
-        else:
-            self.output_layer = Layers(self.y_train.shape[1], penult_layer.n_curr, prev_layer = penult_layer, activation="sigmoid", name = f"Output Layer")
-        penult_layer.next_layer = self.output_layer
-
+        best_val_cost = float("inf")
+        best_val_index = 0
+        patience_counter = 0
 
         for i in tqdm(range(self.epochs)):
 
-            if i % 10 == 0:
-                self.input_layer.forward(self.X_val.T)
-                val_cost = self.log_loss(self.y_val.T)
+            self.input_layer.forward(self.X_val.T)
+            val_cost = self.log_loss(self.y_val.T)
 
-                self.input_layer.forward(self.X_train.T)
-                train_cost = self.log_loss(self.y_train.T)
+            self.input_layer.forward(self.X_train.T)
+            train_cost = self.log_loss(self.y_train.T)
 
-                if i > 0 and val_cost > self.val_cost_evolution[-1]:
-                    return self
-                self.val_cost_evolution.append(val_cost)
-                self.cost_evolution.append(train_cost)
+            self.val_cost_evolution.append(val_cost)
+            self.cost_evolution.append(train_cost)
+
+            if val_cost < best_val_cost:
+                # print(f"New best validation cost: {val_cost}")
+                best_val_cost = val_cost
+                best_val_index = i
+                self.input_layer.save()
+                patience_counter = 0
+            else:
+                patience_counter += 1
+
+            if patience_counter >= self.patience or i == self.epochs - 1:
+                self.input_layer.load()
+                # print(f"Best val index: {best_val_index}")
+                self.cost_evolution = self.cost_evolution[:best_val_index]
+                self.val_cost_evolution = self.val_cost_evolution[:best_val_index]
+                return self
 
 
             shuffled_indices = permutation(self.X_train.shape[0])
@@ -157,7 +167,7 @@ class MLP:
         mlp_copy.input_layer = self.input_layer.copy()
 
         mlp_copy.layers = []
-        curr_layer = self.input_layer
+        curr_layer = mlp_copy.input_layer
         while curr_layer is not None:
             curr_layer = curr_layer.next_layer
             if curr_layer is not None:

@@ -2,7 +2,7 @@ from sys import path
 path.append("..")
 path.append(".")
 from tensorflow.keras.datasets import mnist
-from MLP import MLP
+from MLP import MLP, Layers
 from MLP.Pipeline import make_pipeline
 from MLP.Preprocessing import LabelBinarizer
 from numpy import array, ndarray
@@ -18,7 +18,7 @@ X_val: ndarray = X_val / 255.0
 X_train = X_train.reshape((X_train.shape[0], X_train.shape[1] * X_train.shape[2]))
 X_val = X_val.reshape((X_val.shape[0], X_val.shape[1] * X_val.shape[2]))
 
-mlp = MLP(hidden_layers = (128, 64), epochs=1000, learning_rate=0.01)
+mlp = MLP(hidden_layers = (128, 64, Layers(10, activation="softmax")), epochs=1000, learning_rate=0.01)
 pipe = make_pipeline(LabelBinarizer(), mlp)
 pipe.fit(X_train, y_train)
 pred = pipe.predict(X_val)

@@ -16,8 +16,9 @@ def main():
     # print(X)
 
     multilayer_perceptron = MLP(hidden_layers = (
-                5,
-                5,
+                30,
+                30,
+                Layers(2, activation="softmax", name="Output Layer")
             ),
             epochs=1000,
             learning_rate=0.001
@@ -28,6 +29,7 @@ def main():
         LabelBinarizer(),
         StandardScaler(),
         VarianceThreshold(),
+        # MutualInformation(26),
         multilayer_perceptron
     )
 
