@@ -1,4 +1,6 @@
 from numpy import exp, ndarray, empty_like, std, mean, array, max, sum
+from pickle import load, dump
+from pathlib import Path
 
 
 def sigmoid(
@@ -53,3 +55,14 @@ class PipeValues:
 
     def copy(self):
         return PipeValues(self.X, self.y)
+
+def save_in_file(filename: str, data):
+    with Path(filename) as output_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        file = output_file.open(mode="wb")
+        dump(data, file)
+
+def load_from_file(filename: str):
+    with open(filename, "rb") as f:
+        data = load(f)
+        return data

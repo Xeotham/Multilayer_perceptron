@@ -2,7 +2,6 @@ from multiprocessing import Pool
 from numpy.random import permutation, seed
 from numpy import arange, concatenate, mean, ndarray, array
 from pandas import DataFrame
-from MLP import MLP
 
 
 def train_test_split(
@@ -83,7 +82,7 @@ def _verif(iter_number: int, fold_size: int, X_shuffled, y_shuffled, ml_class) -
 def cross_validation(
         X: ndarray,
         y: ndarray,
-        ml_class: MLP,
+        ml_class,
         k: int = 5,
         multi_process: bool = False,  # Logic inverted in original? Standard is False -> No Multiprocess
 ) -> float:

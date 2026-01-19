@@ -1,5 +1,5 @@
 from numpy import array, ndarray, var, mean, sqrt
-from MLP.utils import PipeValues
+from ML_MHAOUAS.utils import PipeValues
 
 class StandardScaler:
     scale_: ndarray

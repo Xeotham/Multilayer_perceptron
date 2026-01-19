@@ -1,5 +1,5 @@
 from numpy import ndarray, unique, zeros, array
-from MLP.utils import PipeValues
+from ML_MHAOUAS.utils import PipeValues
 
 class LabelBinarizer:
     classes_: ndarray

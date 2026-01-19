@@ -1,10 +1,9 @@
 from numpy.random import permutation
 
 from .Layers import Layers
-from .preprocessing import train_test_split
-from .utils import softmax
+from ML_MHAOUAS.preprocessing import train_test_split
+from ML_MHAOUAS.utils import softmax
 from numpy import log, ndarray, max, unique, array, clip, mean, log, arange, zeros, sum
-from tqdm import tqdm
 from matplotlib.pyplot import plot, show, subplots, legend
 
 class MLP:
@@ -60,7 +59,17 @@ class MLP:
                 new_layer.prev_layer = prev_layer
                 new_layer.n_prev = prev_layer_size
             elif isinstance(layer, int):
-                new_layer = Layers(layer, prev_layer_size, prev_layer = prev_layer, activation="relu", name = f"Hidden Layer {i}")
+
+                if i == len(hidden_layers) - 1:
+                    name = "Output Layer"
+                    if layer > 1:
+                        activation = "softmax"
+                    else:
+                        activation = "sigmoid"
+                else:
+                    activation = "relu"
+                    name = f"Hidden Layer {i}"
+                new_layer = Layers(layer, prev_layer_size, prev_layer = prev_layer, activation=activation, name = name)
             else:
                 raise TypeError("Invalid type for hidden_layers. Layers must be of type int or Layers")
             self.layers.append(new_layer)
@@ -107,7 +116,7 @@ class MLP:
         best_val_index = 0
         patience_counter = 0
 
-        for i in tqdm(range(self.epochs)):
+        for i in range(self.epochs):
 
             self.input_layer.forward(self.X_val.T)
             val_cost = self.log_loss(self.y_val.T)
@@ -122,13 +131,13 @@ class MLP:
                 # print(f"New best validation cost: {val_cost}")
                 best_val_cost = val_cost
                 best_val_index = i
-                self.input_layer.save()
+                self.input_layer.save_curr_state()
                 patience_counter = 0
             else:
                 patience_counter += 1
 
             if patience_counter >= self.patience or i == self.epochs - 1:
-                self.input_layer.load()
+                self.input_layer.load_save_state()
                 # print(f"Best val index: {best_val_index}")
                 self.cost_evolution = self.cost_evolution[:best_val_index]
                 self.val_cost_evolution = self.val_cost_evolution[:best_val_index]

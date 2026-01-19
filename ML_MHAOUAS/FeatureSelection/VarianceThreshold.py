@@ -1,5 +1,5 @@
 from numpy import ndarray, zeros
-from MLP.utils import PipeValues
+from ML_MHAOUAS.utils import PipeValues
 
 
 class VarianceThreshold:

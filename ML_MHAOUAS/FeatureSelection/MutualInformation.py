@@ -1,6 +1,6 @@
 from numpy import ndarray, zeros, histogram, digitize, unique, log, argsort, array
 
-from MLP.utils import PipeValues
+from ML_MHAOUAS.utils import PipeValues
 
 
 class MutualInformation:

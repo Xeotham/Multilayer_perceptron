@@ -1,8 +1,8 @@
 from typing import Callable
 
-from .utils import sigmoid, relu, softmax
+from ML_MHAOUAS.utils import sigmoid, relu, softmax
 
-from MLP.Optimizer import Adam, GD, Momentum
+from ML_MHAOUAS.Optimizer import Adam, GD, Momentum
 
 from numpy import ndarray, array, sum, zeros, sqrt
 from numpy.random import randn
@@ -68,6 +68,7 @@ class Layers:
     def __init__(self, n_curr, n_prev = 0, prev_layer = None, next_layer = None, activation = "relu",optimizer = "adam", learning_rate = 0.01, name = None):
         self.name = name
 
+        assert n_curr >= 0, "Error: n_curr must be >= 0"
         self.n_curr = n_curr
         self.n_prev = n_prev
         self.prev_layer = prev_layer
@@ -149,12 +150,12 @@ class Layers:
             new_layer.next_layer.prev_layer = new_layer
         return new_layer
 
-    def save(self):
+    def save_curr_state(self):
         self.save_state = self.copy()
         if self.next_layer is not None:
-            self.next_layer.save()
+            self.next_layer.save_curr_state()
 
-    def load(self):
+    def load_save_state(self):
         self.Weight = self.save_state.Weight
         self.bias = self.save_state.bias
         self.X = self.save_state.X
@@ -165,4 +166,4 @@ class Layers:
         self.dBias = self.save_state.dBias
 
         if self.next_layer is not None:
-            self.next_layer.load()
+            self.next_layer.load_save_state()

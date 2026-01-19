@@ -1,5 +1,5 @@
-from MLP import MLP
-from MLP.utils import PipeValues
+from ML_MHAOUAS import MLP
+from ML_MHAOUAS.utils import PipeValues
 
 class Pipeline:
     transformers = {}
