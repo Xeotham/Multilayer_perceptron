@@ -98,7 +98,6 @@ class MLP:
 
     def show_plots(self):
         fig, axs = subplots(1, 2)
-        # print(array(self.cost_evolution).T)
         axs[0].plot(array(self.cost_evolution).T)
         axs[0].set_title("Cost Function")
         axs[1].plot(array(self.val_cost_evolution).T)
@@ -108,6 +107,9 @@ class MLP:
     def fit(self, X, y):
 
         self.X_val, self.X_train, self.y_val, self.y_train = train_test_split(X, y)
+
+        if self.y_train.shape[1] != self.output_layer.n_curr:
+            raise RuntimeError("Output layer has wrong shape")
 
         self.input_layer.n_prev = self.X_train.T.shape[0]
         self.input_layer.init_weights()
@@ -124,11 +126,12 @@ class MLP:
             self.input_layer.forward(self.X_train.T)
             train_cost = self.log_loss(self.y_train.T)
 
+            print(f"Epoch {i} / {self.epochs} - train_cost: {train_cost:.3} val_cost: {val_cost:.3}")
+
             self.val_cost_evolution.append(val_cost)
             self.cost_evolution.append(train_cost)
 
             if val_cost < best_val_cost:
-                # print(f"New best validation cost: {val_cost}")
                 best_val_cost = val_cost
                 best_val_index = i
                 self.input_layer.save_curr_state()

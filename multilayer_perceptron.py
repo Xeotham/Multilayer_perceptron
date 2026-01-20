@@ -8,8 +8,6 @@ from numpy import unique, mean
 
 
 def main():
-    # multilayer_perceptron = ML_MHAOUAS(hidden_layers = (30, 30, 30), epochs=100000)
-
     df = read_csv('./data/train_set.csv', index_col=None, header=None)
     X = df.values[:, 2:].astype(float)
     y = df.values[:, 1]
@@ -22,7 +20,7 @@ def main():
             ),
             epochs=1000,
             learning_rate=0.001,
-            patience=500
+            patience=50
         )
 
     X_train, X_val, y_train, y_val = train_test_split(X, y)
