@@ -210,6 +210,7 @@ def configure_model():
     # configure models
     input_learning_rate()
     input_epochs()
+    input_patience()
     input_batch_size()
     # configure Layers
     input_layers()

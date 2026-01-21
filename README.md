@@ -11,4 +11,4 @@ Project to create our very first Neural Network, a Multilayer Perceptron.
 **_Feature Selection_**
 - [Article about the Variance Threshold](https://www.geeksforgeeks.org/machine-learning/variance-threshold/)
 - [Video about the Mutual Information](https://www.youtube.com/watch?v=eJIp_mgVLwE)
-- 
+
